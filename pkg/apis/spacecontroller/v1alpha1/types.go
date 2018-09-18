@@ -23,7 +23,7 @@ import (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Foo is a specification for a Foo resource
+// Space is a specification for a SpaceSpec resource
 type Space struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -32,20 +32,20 @@ type Space struct {
 	Status SpaceStatus `json:"status"`
 }
 
-// FooSpec is the spec for a Foo resource
+// SpaceSpec is the spec for a Space resource
 type SpaceSpec struct {
-	DeploymentName string `json:"deploymentName"`
-	Replicas       *int32 `json:"replicas"`
+	NameSpace string `json:"nameSpace"`
+	SecretName string `json:"secretName"`
 }
 
-// FooStatus is the status for a Foo resource
+// SpaceStatus is the status for a Space resource
 type SpaceStatus struct {
-	AvailableReplicas int32 `json:"availableReplicas"`
+	AvailableSecrets int32 `json:"availablesecrets"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// FooList is a list of Foo resources
+// SpaceList is a list of Space resources
 type SpaceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`

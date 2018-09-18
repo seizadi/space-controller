@@ -62,7 +62,7 @@ func main() {
 	exampleInformerFactory := informers.NewSharedInformerFactory(exampleClient, time.Second*30)
 
 	controller := NewController(kubeClient, exampleClient,
-		kubeInformerFactory.Apps().V1().Deployments(),
+		kubeInformerFactory.Core().V1().Secrets(),
 		exampleInformerFactory.Spacecontroller().V1alpha1().Spaces())
 
 	go kubeInformerFactory.Start(stopCh)

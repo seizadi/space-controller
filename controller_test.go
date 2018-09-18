@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	apps "k8s.io/api/apps/v1"
+	
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -32,7 +32,7 @@ import (
 	core "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
-
+	
 	samplecontroller "github.com/seizadi/space-controller/pkg/apis/spacecontroller/v1alpha1"
 	"github.com/seizadi/space-controller/pkg/client/clientset/versioned/fake"
 	informers "github.com/seizadi/space-controller/pkg/client/informers/externalversions"
@@ -50,7 +50,7 @@ type fixture struct {
 	kubeclient *k8sfake.Clientset
 	// Objects to put in the store.
 	fooLister        []*samplecontroller.Space
-	deploymentLister []*apps.Deployment
+	secretLister []*corev1.Secret
 	// Actions expected to happen on the client.
 	kubeactions []core.Action
 	actions     []core.Action
@@ -67,7 +67,7 @@ func newFixture(t *testing.T) *fixture {
 	return f
 }
 
-func newFoo(name string, replicas *int32) *samplecontroller.Space {
+func newFoo(name string) *samplecontroller.Space {
 	return &samplecontroller.Space{
 		TypeMeta: metav1.TypeMeta{APIVersion: samplecontroller.SchemeGroupVersion.String()},
 		ObjectMeta: metav1.ObjectMeta{
@@ -75,8 +75,8 @@ func newFoo(name string, replicas *int32) *samplecontroller.Space {
 			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: samplecontroller.SpaceSpec{
-			DeploymentName: fmt.Sprintf("%s-deployment", name),
-			Replicas:       replicas,
+			NameSpace: fmt.Sprintf("%s", name),
+			SecretName: fmt.Sprintf("%s-secrets", name),
 		},
 	}
 }
@@ -89,18 +89,18 @@ func (f *fixture) newController() (*Controller, informers.SharedInformerFactory,
 	k8sI := kubeinformers.NewSharedInformerFactory(f.kubeclient, noResyncPeriodFunc())
 
 	c := NewController(f.kubeclient, f.client,
-		k8sI.Apps().V1().Deployments(), i.Spacecontroller().V1alpha1().Spaces())
+		k8sI.Core().V1().Secrets(), i.Spacecontroller().V1alpha1().Spaces())
 
 	c.foosSynced = alwaysReady
-	c.deploymentsSynced = alwaysReady
+	c.secretsSynced = alwaysReady
 	c.recorder = &record.FakeRecorder{}
 
 	for _, f := range f.fooLister {
 		i.Spacecontroller().V1alpha1().Spaces().Informer().GetIndexer().Add(f)
 	}
 
-	for _, d := range f.deploymentLister {
-		k8sI.Apps().V1().Deployments().Informer().GetIndexer().Add(d)
+	for _, d := range f.secretLister {
+		k8sI.Core().V1().Secrets().Informer().GetIndexer().Add(d)
 	}
 
 	return c, i, k8sI
@@ -214,8 +214,8 @@ func filterInformerActions(actions []core.Action) []core.Action {
 		if len(action.GetNamespace()) == 0 &&
 			(action.Matches("list", "spaces") ||
 				action.Matches("watch", "spaces") ||
-				action.Matches("list", "deployments") ||
-				action.Matches("watch", "deployments")) {
+				action.Matches("list", "secrets") ||
+				action.Matches("watch", "secrets")) {
 			continue
 		}
 		ret = append(ret, action)
@@ -224,12 +224,12 @@ func filterInformerActions(actions []core.Action) []core.Action {
 	return ret
 }
 
-func (f *fixture) expectCreateDeploymentAction(d *apps.Deployment) {
-	f.kubeactions = append(f.kubeactions, core.NewCreateAction(schema.GroupVersionResource{Resource: "deployments"}, d.Namespace, d))
+func (f *fixture) expectCreateSecretAction(d *corev1.Secret) {
+	f.kubeactions = append(f.kubeactions, core.NewCreateAction(schema.GroupVersionResource{Resource: "secrets"}, d.Namespace, d))
 }
 
-func (f *fixture) expectUpdateDeploymentAction(d *apps.Deployment) {
-	f.kubeactions = append(f.kubeactions, core.NewUpdateAction(schema.GroupVersionResource{Resource: "deployments"}, d.Namespace, d))
+func (f *fixture) expectUpdateSecretAction(d *corev1.Secret) {
+	f.kubeactions = append(f.kubeactions, core.NewUpdateAction(schema.GroupVersionResource{Resource: "secrets"}, d.Namespace, d))
 }
 
 func (f *fixture) expectUpdateFooStatusAction(foo *samplecontroller.Space) {
@@ -248,15 +248,15 @@ func getKey(foo *samplecontroller.Space, t *testing.T) string {
 	return key
 }
 
-func TestCreatesDeployment(t *testing.T) {
+func TestCreatesSecret(t *testing.T) {
 	f := newFixture(t)
-	foo := newFoo("test", int32Ptr(1))
+	foo := newFoo("test")
 
 	f.fooLister = append(f.fooLister, foo)
 	f.objects = append(f.objects, foo)
 
-	expDeployment := newDeployment(foo)
-	f.expectCreateDeploymentAction(expDeployment)
+	expSecret := newSecret(foo)
+	f.expectCreateSecretAction(expSecret)
 	f.expectUpdateFooStatusAction(foo)
 
 	f.run(getKey(foo, t))
@@ -264,47 +264,47 @@ func TestCreatesDeployment(t *testing.T) {
 
 func TestDoNothing(t *testing.T) {
 	f := newFixture(t)
-	foo := newFoo("test", int32Ptr(1))
-	d := newDeployment(foo)
+	foo := newFoo("test")
+	d := newSecret(foo)
 
 	f.fooLister = append(f.fooLister, foo)
 	f.objects = append(f.objects, foo)
-	f.deploymentLister = append(f.deploymentLister, d)
+	f.secretLister = append(f.secretLister, d)
 	f.kubeobjects = append(f.kubeobjects, d)
 
 	f.expectUpdateFooStatusAction(foo)
 	f.run(getKey(foo, t))
 }
 
-func TestUpdateDeployment(t *testing.T) {
-	f := newFixture(t)
-	foo := newFoo("test", int32Ptr(1))
-	d := newDeployment(foo)
-
-	// Update replicas
-	foo.Spec.Replicas = int32Ptr(2)
-	expDeployment := newDeployment(foo)
-
-	f.fooLister = append(f.fooLister, foo)
-	f.objects = append(f.objects, foo)
-	f.deploymentLister = append(f.deploymentLister, d)
-	f.kubeobjects = append(f.kubeobjects, d)
-
-	f.expectUpdateFooStatusAction(foo)
-	f.expectUpdateDeploymentAction(expDeployment)
-	f.run(getKey(foo, t))
-}
+// TODO - If we support Update add this test back
+// func TestUpdateSecret(t *testing.T) {
+//	f := newFixture(t)
+//	foo := newFoo("test")
+//	d := newSecret(foo)
+//
+//	// Update replicas
+//	expSecret := newSecret(foo)
+//
+//	f.fooLister = append(f.fooLister, foo)
+//	f.objects = append(f.objects, foo)
+//	f.secretLister = append(f.secretLister, d)
+//	f.kubeobjects = append(f.kubeobjects, d)
+//
+//	f.expectUpdateFooStatusAction(foo)
+//	f.expectUpdateSecretAction(expSecret)
+//	f.run(getKey(foo, t))
+//}
 
 func TestNotControlledByUs(t *testing.T) {
 	f := newFixture(t)
-	foo := newFoo("test", int32Ptr(1))
-	d := newDeployment(foo)
+	foo := newFoo("test")
+	d := newSecret(foo)
 
 	d.ObjectMeta.OwnerReferences = []metav1.OwnerReference{}
 
 	f.fooLister = append(f.fooLister, foo)
 	f.objects = append(f.objects, foo)
-	f.deploymentLister = append(f.deploymentLister, d)
+	f.secretLister = append(f.secretLister, d)
 	f.kubeobjects = append(f.kubeobjects, d)
 
 	f.runExpectError(getKey(foo, t))

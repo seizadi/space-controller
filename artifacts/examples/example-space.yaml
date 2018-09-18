@@ -4,5 +4,5 @@ kind: Space
 metadata:
   name: example-foo
 spec:
-  deploymentName: example-foo
-  replicas: 1
+  nameSpace: example
+  secretName: example-foo

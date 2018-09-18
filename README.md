@@ -3,6 +3,10 @@
 This repository implements a space controller for watching Space resources as
 defined with a CustomResourceDefinition (CRD).
 
+## References
+[Extend K8 with Custom Resources](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/)
+
+## Development
 **Note:** go-get or vendor this package as `github.com/seizadi/space-controller`.
 
 The Space controller performs operations such as:
@@ -46,7 +50,7 @@ deployments, the Kubernetes cluster version should be greater than 1.9.
 
 ```sh
 # assumes you have a working kubeconfig, not required if operating in-cluster
-$ go build -o bin/space-controller cmd/.
+$ go build -o bin/space-controller .
 $ ./bin/space-controller -kubeconfig=$HOME/.kube/config
 
 # create a CustomResourceDefinition
@@ -55,8 +59,9 @@ $ kubectl create -f artifacts/examples/crd.yaml
 # create a custom resource of type Space
 $ kubectl create -f artifacts/examples/example-space.yaml
 
-# check deployments created through the Space custom resource
-$ kubectl get deployments
+# check secrets created through the Space custom resource
+$ kubectl get secrets
+$ kubectl get secret example-foo -o yaml
 
 # delete a custom resource of type Space
 $ kubectl delete -f artifacts/examples/example-space.yaml
