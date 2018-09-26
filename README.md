@@ -166,3 +166,37 @@ k8s.io/client-go.
 `space-controller` is from
 https://github.com/seizadi/space-controller.
 Code changes are made in that location.
+
+## Vault Integration
+
+### Install Vault
+If you are new to Vault here is their
+[getting started](https://www.vaultproject.io/intro/getting-started/install.html)
+In the following sections I assume you have Vault running. For development we run it:
+```bash
+$ vault server -dev
+..
+Unseal Key: IDjzQ/AQ4n+4UOYbD89DYziwQodetzpV3ke5+DoAQ6Y=
+Root Token: 2b69b081-1a7e-7430-2027-68471114dcc6
+..
+```
+Make sure you have VAULT_ADDR set in .profile or .bashrc
+```bash
+export VAULT_ADDR=http://127.0.0.1:8200
+```
+Then check that Vault server is running:
+```bash
+$ vault status
+Key             Value
+---             -----
+Seal Type       shamir
+Sealed          false
+Total Shares    1
+Threshold       1
+Version         0.11.1
+Cluster Name    vault-cluster-06f2737e
+Cluster ID      0952e827-75d2-10ee-1f22-2562be2ee031
+HA Enabled      false
+```
+
+
