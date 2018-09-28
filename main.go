@@ -18,15 +18,16 @@ package main
 
 import (
 	"flag"
+	"os"
 	"time"
-
+	
 	"github.com/golang/glog"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-
+	
 	clientset "github.com/seizadi/space-controller/pkg/client/clientset/versioned"
 	informers "github.com/seizadi/space-controller/pkg/client/informers/externalversions"
 	"github.com/seizadi/space-controller/pkg/signals"
@@ -35,6 +36,8 @@ import (
 var (
 	masterURL  string
 	kubeconfig string
+	vaultAddr  string
+	vaultToken string
 )
 
 func main() {
@@ -56,6 +59,18 @@ func main() {
 	exampleClient, err := clientset.NewForConfig(cfg)
 	if err != nil {
 		glog.Fatalf("Error building example clientset: %s", err.Error())
+	}
+	
+	vaultAddr := os.Getenv("VAULT_ADDR")
+	if vaultAddr == "" {
+		glog.Fatal("Error getting vault address from env VAULT_ADDR")
+	}
+	
+	token := os.Getenv("VAULT_TOKEN")
+	
+	vaultToken, err = VaultTokenValidation(vaultAddr, token)
+	if (err != nil) {
+		glog.Fatalf("Error getting vault token env VAULT_ADDR = %s, VAULT_TOKEN = %s, %s", vaultAddr, token, err)
 	}
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)

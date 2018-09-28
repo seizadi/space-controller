@@ -27,15 +27,15 @@ import (
 type Space struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
+	
 	Spec   SpaceSpec   `json:"spec"`
 	Status SpaceStatus `json:"status"`
 }
 
 // SpaceSpec is the spec for a Space resource
 type SpaceSpec struct {
-	NameSpace string `json:"nameSpace"`
 	SecretName string `json:"secretName"`
+	Secrets map[string]string `json:"secretes"`
 }
 
 // SpaceStatus is the status for a Space resource

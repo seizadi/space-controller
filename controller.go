@@ -82,6 +82,11 @@ type Controller struct {
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
 	recorder record.EventRecorder
+	// vault address for API Access
+	// here is sample for localhost http://127.0.0.1:8200
+	vaultAddr string
+	// vault token is used for API Access
+	vaultToken string
 }
 
 // NewController returns a new sample controller
@@ -100,16 +105,18 @@ func NewController(
 	eventBroadcaster.StartLogging(glog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeclientset.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
-
+	
 	controller := &Controller{
-		kubeclientset:     kubeclientset,
-		sampleclientset:   sampleclientset,
-		secretsLister: secretInformer.Lister(),
-		secretsSynced: secretInformer.Informer().HasSynced,
-		foosLister:        fooInformer.Lister(),
-		foosSynced:        fooInformer.Informer().HasSynced,
-		workqueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Foos"),
-		recorder:          recorder,
+		kubeclientset:   kubeclientset,
+		sampleclientset: sampleclientset,
+		secretsLister:   secretInformer.Lister(),
+		secretsSynced:   secretInformer.Informer().HasSynced,
+		foosLister:      fooInformer.Lister(),
+		foosSynced:      fooInformer.Informer().HasSynced,
+		workqueue:       workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Foos"),
+		recorder:        recorder,
+		vaultAddr:       vaultAddr,
+		vaultToken:      vaultToken,
 	}
 
 	glog.Info("Setting up event handlers")
@@ -388,7 +395,7 @@ func (c *Controller) handleObject(obj interface{}) {
 func newSecret (foo *samplev1alpha1.Space) *corev1.Secret {
 	s := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      foo.Spec.SecretName,
+			Name:      foo.Name,
 			Namespace: foo.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(foo, schema.GroupVersionKind{
@@ -404,15 +411,7 @@ func newSecret (foo *samplev1alpha1.Space) *corev1.Secret {
 	s.Name = foo.Spec.SecretName
 	s.Type = corev1.SecretTypeOpaque
 	s.Data = map[string][]byte{}
-	secrets := map[string]string{
-		"rails_env":         "cHJvZHVjdGlvbg==",
-		"secret_key_base":   "ZjUzNmZkZjI1ZGNkMDE1YzJhM2ZhYjJhODE1MTRiZDIxYTE0ZDU3MTYyN2U3YzYwYzM2OGZkMjg3ZDg3ZTk0ZmRkMzE0MTYwNmQ3NGFiNzAyZWNmMTk2OTE2NTdlMWU0YjNjOWZiNmY5MWMyZjM4YTVhNjQxY2MyMDM2Nzc4YWM=",
-		"database_host":     "Y3NwLWs4LXJkcy5hd3MtdmEuY2xvdWQuaW5mb2Jsb3guY29t",
-		"database_user":     "cm9vdA==",
-		"database_password": "Y3RvLWJvbmZpcmU=",
-		"database_name":     "ZG5zX2FuYWx5dGljc19kZXY=",
-	}
-	for key, value := range secrets {
+	for key, value := range foo.Spec.Secrets {
 		s.Data[key] = []byte(value)
 		
 	}

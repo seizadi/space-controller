@@ -59,6 +59,9 @@ $ kubectl create -f artifacts/examples/crd.yaml
 # create a custom resource of type Space
 $ kubectl create -f artifacts/examples/example-space.yaml
 
+# list the custom resources
+$ kubectl get spaces
+
 # check secrets created through the Space custom resource
 $ kubectl get secrets
 $ kubectl get secret example-foo -o yaml
@@ -150,12 +153,18 @@ In the above steps, use `crd-status-subresource.yaml` to create the CRD:
 $ kubectl create -f artifacts/examples/crd-status-subresource.yaml
 ```
 
+To create a custom resource:
+```sh
+# create a CustomResourceDefinition supporting the status subresource
+$ kubectl create -f artifacts/examples/crd-status-subresource.yaml
+```
 ## Cleanup
 
 You can clean up the created CustomResourceDefinition with:
 
-    $ kubectl delete crd spaces.spacecontroller.seizadi.github.com
-
+```sh
+$ kubectl create -f artifacts/examples/example-space.yaml
+```
 ## Compatibility
 
 HEAD of this repository will match HEAD of k8s.io/apimachinery and
@@ -198,5 +207,38 @@ Cluster Name    vault-cluster-06f2737e
 Cluster ID      0952e827-75d2-10ee-1f22-2562be2ee031
 HA Enabled      false
 ```
+Now lets setup a path for Kubernetes secrets:
+```bash
+$ vault secrets enable -path=k8s kv
+```
+You can always get list of paths or disable it:
+```bash
+$ vault secrets list
+$ vault secrets disable k8s/
+```
+Now lets store a secret:
+```bash
+$ vault write k8s/contacts-app-seizadi-minikube-dev-secrets ATLAS_DATABASE_PASSWORD=postgres
+```
+We don't want to use the root-token so we create a token we can revoke,
+best policy is to also attach policy to limit access to a path:
+```bash
+$ vault token create
+token                c133f1a9-db52-145c-cd69-99ee2962f72f
+...
+```
+You can revoke it if compromised or not needed:
+```bash
+$ vault token revoke cb583f98-5dce-5251-f522-3bc2012ce942
+Success! Revoked token (if it existed)
+```
+Now we can use API request to access the secret:
+```bash
+$ export VAULT_TOKEN="c133f1a9-db52-145c-cd69-99ee2962f72f"
+$ curl \
+    --header "X-Vault-Token: $VAULT_TOKEN" \
+    $VAULT_ADDR/v1/k8s/contacts-app-seizadi-minikube-dev-secrets
+```
+
 
 

@@ -1,8 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: contacts-app-seizadi-minikube-dev
+---
 apiVersion: spacecontroller.seizadi.github.com/v1alpha1
 
 kind: Space
 metadata:
-  name: example-foo
+  name: seizadi-v1-0-contacts-app
+  namespace: contacts-app-seizadi-minikube-dev
 spec:
-  nameSpace: example
-  secretName: example-foo
+  secretName: seizadi-v1-0-contacts-app-secrets
+  secrets:
+    "rails_env":         "cHJvZHVjdGlvbg=="
+    "secret_key_base":   "ZjUzNmZkZjI1ZGNkMDE1YzJhM2ZhYjJhODE1MTRiZDIxYTE0ZDU3MTYyN2U3YzYwYzM2OGZkMjg3ZDg3ZTk0ZmRkMzE0MTYwNmQ3NGFiNzAyZWNmMTk2OTE2NTdlMWU0YjNjOWZiNmY5MWMyZjM4YTVhNjQxY2MyMDM2Nzc4YWM="
+    "database_host":     "Y3NwLWs4LXJkcy5hd3MtdmEuY2xvdWQuaW5mb2Jsb3guY29t"
+    "database_user":     "cm9vdA=="
+    "database_password": "Y3RvLWJvbmZpcmU="
+    "database_name":     "ZG5zX2FuYWx5dGljc19kZXY="
