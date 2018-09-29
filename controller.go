@@ -274,12 +274,19 @@ func (c *Controller) syncHandler(key string) error {
 		runtime.HandleError(fmt.Errorf("%s: secret name must be specified", key))
 		return nil
 	}
-
+	
+	path := "k8s/" + foo.Spec.SecretName
+	
+	secrets, err := VaultGetSecret(c.vaultAddr, c.vaultToken, "read", path)
+	if err != nil {
+		return err
+	}
+	
 	// Get the deployment with the name specified in Foo.spec
 	secret, err := c.secretsLister.Secrets(foo.Namespace).Get(secretName)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
-		secret, err = c.kubeclientset.CoreV1().Secrets(foo.Namespace).Create(newSecret(foo))
+		secret, err = c.kubeclientset.CoreV1().Secrets(foo.Namespace).Create(newSecret(foo, secrets))
 	}
 
 	// If an error occurs during Get/Create, we'll requeue the item so we can
@@ -311,9 +318,9 @@ func (c *Controller) syncHandler(key string) error {
 	// If an error occurs during Update, we'll requeue the item so we can
 	// attempt processing again later. THis could have been caused by a
 	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
-	}
+	//if err != nil {
+	//	return err
+	//}
 
 	// Finally, we update the status block of the Foo resource to reflect the
 	// current state of the world
@@ -392,7 +399,7 @@ func (c *Controller) handleObject(obj interface{}) {
 	}
 }
 
-func newSecret (foo *samplev1alpha1.Space) *corev1.Secret {
+func newSecret (foo *samplev1alpha1.Space, secrets map[string]interface{}) *corev1.Secret {
 	s := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      foo.Name,
@@ -411,9 +418,9 @@ func newSecret (foo *samplev1alpha1.Space) *corev1.Secret {
 	s.Name = foo.Spec.SecretName
 	s.Type = corev1.SecretTypeOpaque
 	s.Data = map[string][]byte{}
-	for key, value := range foo.Spec.Secrets {
-		s.Data[key] = []byte(value)
-		
+	//TODO - Compare set of values in foo.Spec.Secrets against what is in secrets
+	for key, value := range secrets {
+		s.Data[key] = []byte(value.(string))
 	}
 	
 	return s

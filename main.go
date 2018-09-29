@@ -61,7 +61,7 @@ func main() {
 		glog.Fatalf("Error building example clientset: %s", err.Error())
 	}
 	
-	vaultAddr := os.Getenv("VAULT_ADDR")
+	vaultAddr = os.Getenv("VAULT_ADDR")
 	if vaultAddr == "" {
 		glog.Fatal("Error getting vault address from env VAULT_ADDR")
 	}
@@ -79,7 +79,7 @@ func main() {
 	controller := NewController(kubeClient, exampleClient,
 		kubeInformerFactory.Core().V1().Secrets(),
 		exampleInformerFactory.Spacecontroller().V1alpha1().Spaces())
-
+	
 	go kubeInformerFactory.Start(stopCh)
 	go exampleInformerFactory.Start(stopCh)
 

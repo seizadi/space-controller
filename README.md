@@ -240,5 +240,3 @@ $ curl \
     $VAULT_ADDR/v1/k8s/contacts-app-seizadi-minikube-dev-secrets
 ```
 
-
-

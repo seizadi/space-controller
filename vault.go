@@ -34,7 +34,7 @@ func VaultTokenValidation(vaultAddr string, token string) (string, error) {
 }
 
 
-func VaultGetSecret(vaultAddr string, path string, method string, token string) (map[string]interface{}, error) {
+func VaultGetSecret(vaultAddr string, token string, method string, path string) (map[string]interface{}, error) {
 	client, err := VaultClientMaker(vaultAddr)
 	if err != nil {
 		glog.Fatalf("Error getting vault secrets: %s", err.Error())
