@@ -19,6 +19,7 @@ package main
 import (
 	"fmt"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"strings"
 	"time"
 	
 	"github.com/golang/glog"
@@ -275,7 +276,7 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 	
-	path := "k8s/" + foo.Spec.SecretName
+	path := strings.TrimSpace(foo.Spec.Path) + "/" + strings.TrimSpace(foo.Spec.SecretName)
 	
 	secrets, err := VaultGetSecret(c.vaultAddr, c.vaultToken, "read", path)
 	if err != nil {

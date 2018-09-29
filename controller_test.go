@@ -75,7 +75,7 @@ func newFoo(name string) *samplecontroller.Space {
 			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: samplecontroller.SpaceSpec{
-			NameSpace: fmt.Sprintf("%s", name),
+			Path: fmt.Sprintf("%s-path", name),
 			SecretName: fmt.Sprintf("%s-secrets", name),
 		},
 	}

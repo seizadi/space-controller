@@ -34,8 +34,9 @@ type Space struct {
 
 // SpaceSpec is the spec for a Space resource
 type SpaceSpec struct {
-	SecretName string `json:"secretName"`
-	Secrets map[string]string `json:"secretes"`
+	Path       string            `json:"path"`
+	SecretName string            `json:"secretName"`
+	Secrets    map[string]string `json:"secretes"`
 }
 
 // SpaceStatus is the status for a Space resource

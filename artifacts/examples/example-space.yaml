@@ -11,6 +11,7 @@ metadata:
   namespace: contacts-app-seizadi-minikube-dev
 spec:
   secretName: contacts-app-seizadi-minikube-dev-secrets
+  path: k8s
   secrets:
     # echo -n 'postgres' | base64
     # echo -n 'cG9zdGdyZXM=' | base64 --decode; echo
