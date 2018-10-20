@@ -1,7 +1,20 @@
 # space-controller
 
+The use case is to create any resources that can not be directly created
+using the application manifest. The main use case right now is to setup
+secrets from vault.
+
+The terms namespace and secret are already used by
+kubernetes so I use the term "space" for this resource.
+
 This repository implements a space controller for watching Space resources as
 defined with a CustomResourceDefinition (CRD).
+**Note:** There is support for only three types of secrets with the
+package right now, see the configuration in the section on
+vault setup for various secret types.
+* Opaque
+* TLS (kubernetes.io/tls)
+* Certs (kubernetes.io/dockerconfigjson)
 
 ## References
 [Extend K8 with Custom Resources](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/)
@@ -239,4 +252,34 @@ $ curl \
     --header "X-Vault-Token: $VAULT_TOKEN" \
     $VAULT_ADDR/v1/k8s/contacts-app-seizadi-minikube-dev-secrets
 ```
+Vault setup for sample app for three types of secrets:
+```bash
+$ vault secrets enable -path=k8s kv
+$ vault write k8s/qa0-secrets \
+ATLAS_DATABASE_PASSWORD=postgres \
+app-cert-tls.crt=MIIEvTCCA6WgAwIBAgIJAI1wSTI1S9DFMA0GCSqGSIb3DQEBBQUAMIGaMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExFDASBgNVBAcTC1NhbnRhIENsYXJhMREwDwYDVQQKEwhJbmZvYmxveDEMMAoGA1UECxMDQ1RPMSIwIAYDVQQDExlxYTAtdGVzdC5jc3AuaW5mb2Jsb3guY29tMSMwIQYJKoZIhvcNAQkBFhRzZWl6YWRpQGluZm9ibG94LmNvbTAeFw0xODEwMTkxNjE4NDJaFw0xOTEwMTkxNjE4NDEwJVUzELMAkGA1UECBMCQ0ExFDASBgNVBAcTC1NhbnRhIENsYXJhMREwDwYDVQQKEwhJbmZvYmxveDEMMAoGA1UECxMDQ1RPMSIwIAYDVQQDExlxYTAtdGVzdC5jc3AuaW5mb2Jsb3guY29tMSMwIQYJKoZIhvcNAQkBFhRzZWl6YWRpQGluZm9ibG94LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJkxomuER4doW53Jpt0fjm2kcQcjtCN1KCxkA7AdtE+E9BzWyFLzaL1UA7OckhvGf2ix5x7W46pTChhmNLfXRB1Yn5Rfk6CG0gt6qzGfDB3pQE3Uw63Jg7TCwTyNFqcQwU608XzVwpwOUPQVaK4Hx0fl69ulRLH2PFc5kwmIIHqun4GV1n5JUuPAkev1fkvMpPxHN716GVJ5+I4qn7vQU5Ih5N9cqV913y10xoRa0Rg+d2P8WSjJuU4/PrpovSy7RarPt6z6cAFX9SR10Ta6wHSir7HfVd7ROn4jPDrUS9AfjbyaMJzuqAHLvclEYpcsgSX2tcUO6GwcmauYd+r4a88CAwEAAaOCAQIwgf8wHQYDVR0OBBYEFKtGNXAd0oIW5IET3NgxJJFPkY/dMIHPBgNVHSMEgccwgcSAFKtGNXAd0oIW5IET3NgxJJFPkY/doYGgpIGdMIGaMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExFDASBgNVBAcTC1NhbnRhIENsYXJhMREwDwYDVQQKEwhJbmZvYmxveDEMMAoGA1UECxMDQ1RPMSIwIAYDVQQDExlxYTAtdGVzdC5jc3AuaW5mb2Jsb3guY29tMSMwIQYJKoZIhvcNAQkBFhRzZWl6YWRpQGluZm9ibG94LmNvbYIJAI1wSTI1S9DFMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADggEBABJpdkdCHyLleF6z0Ksdn6i4+6HtVM4egv1Se6HTUDnUBv2o4kEKg/S9hZIRsk0NLObFG/mCyG8q/okxpjvoK2qQlP/PHM4ElkHfUyObo1vTCRoQHakJ92PXhk1e+jMVA5hKGwVZ0x4qeO4pYNapW/Tc1I0eHD9fijCOYhDjGELV6OuIB4bEJMcYhtVexhCiMF7ozM4TZClA30oftxPSX2ij4wKvLjoJcyIDP4HdNoEHfE2+WOivgdxo1oiIIE5zkWQujQVMdNxRqYdhm+1/+JrLCke7dcCTVjLP1ZaSMRUtlcmw/kZBTawU32MiXvsR+XGhAdrvtdqulKs+IwsUqls= \
+app-cert-tls.key=MIIEpAIBAAKCAQEAmTGia4RHh2hbncmm3R+ObaRxByO0I3UoLGQDsB20T4T0HNbIUvNovVQDs5ySG8Z/aLHnHtbjqlMKGGY0t9dEHViflF+ToIbSC3qrMZ8MHelATdTDrcmDtMLBPI0WpxDBTrTxfNXCnA5Q9BVorgfHR+Xr26VEsfY8VzmTCYggeq6fgZXWfklS48CR6/V+S8yk/Ec3vXoZUnn4jiqfu9BTkiHk31ypX3XfLXTGhFrRGD53Y/xZKMm5Tj8+umi9LLtFqs+3rPpwAVf1JHXRNrrAdKKvsd9V3tE6fiM8OtRL0B+NvJownO6oAcu9yURilyyBJfa1xQ7obByZq5h36vhrzwIDAQABAoIBAQCNv9ibBdYt3AlR8kIdP1LJ7yvKwGWxnXljwdOLxaCPJ+W9PZw07ReQgEnAi3LCkqRX2q2R4qLcemPP+dpz9ZMIWHWok9uE4NtAVexMSO+sSaT/n4zEpL7ipoapIZ/BTIah7lm4+g5N2g1cHOc0iOwDgiMApWbwCHkC+LouSrBK8xUVwv2LRDJCD8JjVfJJvkpD+msB9ggKF/HzpadkNYZf5MaGugYH5JvvcEB+T2GtO+ATS2utpuxUG2ov1yIArLz7i9hc8eYn+9KhxA1RuTRWNRmppjX4zQ8Wc29uvv7nNc0GGr04X9yX7lcO+IDwnYQLr/WVoivsyFLfh9nngINhAoGBAMamS4wKzx17E//T7Q2SpCH0jfidWH73GzUxpS7JVo9gmKtcZeqZjPQNWJgWSP+/B3Kk74pEPvQOOcY8p9W0Abs5Pm5+5NVuFbuMRw37Umf7FLB441lqBgSp6yWAKpyBwJl/sp6sqEJAOzU0HnOx4CI2gbp/65Ybdr9i9BJRIDcfAoGBAMVr0cWy2TEQVWKPAx5XOVJzk9kIpYKQSrKlTpPbGvxL3YTk2v1Lejz3/vfqHMbqFpqi8emmErE+c7hIQJT3UnssStdJilRmj5L6u3RT5Qq+4Assxq2Fdd0Ddd800yAKzUEP940ygKjSHzFlw1BFFFs3H0uVNrNNLk/hXNs7wKVRAoGAb0pDENYNasrFTZIBQJVi9tL3ps0gAyGVUJvbmvaZVAIeBgLh5ijYWvIPLEVv6DexiHz25lONoVVG8NSSgpsyTR2o6GaW9SuTaVsRg7fFVxPHZ4aSeEl5zasUXhILzVqz+EseWt8H9PXfNdNZLB//HavDyiRYa+Q/BsH9UzW4AqkCgYEAgSJJkLuv/bvlXhaVv57mS9x19R0GxiSD997RSz2ipS0qtObNp6lbR84f5SIpuKMeLgAvpNmQmId1QjFgrRApz4/lVHUyGosLluSTAUBvLVw1SJn9SztlITBGRb5T6z2ljM1Y6+8A4WywIquh2juVWSTxP4tWwGnXxUBwcKbhGEECgYAhDdrT4Rbzk6JdWz+YMBMtvDeHbwGGypYxNwJ0MFLKJHUN/NQ+Hqc7hAnbgDmNqoxtJOCdYRHf06A2yMXmhGX6Kyktv/xEMzKth5nMi7vGK/xfw87zfl1Y5YIXdWPC3NXR1MzetkouVoN2s2n9TRsV5iHWtc5cFwzdvh9gE056xA== \
+app-image-pull.dockerconfigjson=e2F1dGhzOnt5b3VycHJpdmF0ZXJlZ2lzdHJ5LmNvbTp7dXNlcm5hbWU6amFuZWRvZSxwYXNzd29yZDp4eHh4eHh4eHh4eCxlbWFpbDpqZG9lQGV4YW1wbGUuY29tLGF1dGg6YzNSLi4uekUyfX19Cgo= \
+```
+***Reference ./artifacts/examples/example-space.yaml***
 
+***Note:*** There is additional '-' for TLS added to seperate the secret
+from the two keys, 'tls.crt' and 'tls.key'
+
+***Note:*** The image pull has sensitive information I did not checkin
+a valid value you will get an error if you use the above:
+```bash
+... error syncing 'contacts-app-seizadi-minikube-dev/app-imagepull': Secret "app-imagepull" is invalid: data[.dockerconfigjson]: Invalid value: "<secret contents redacted>": invalid character 'e' looking for beginning of value
+```
+[Reference the doc](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
+The value of the .dockerconfigjson field is a base64 representation of
+your Docker credentials.
+Create a valid secret:
+```bash
+kubectl create secret docker-registry regcred --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
+```
+
+Then use following to get the valid base64 value to store in vault:
+```bash
+kubectl get secret regcred --output="jsonpath={.data.\.dockerconfigjson}"
+```

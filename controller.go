@@ -276,9 +276,9 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 	
-	path := strings.TrimSpace(foo.Spec.Path) + "/" + strings.TrimSpace(foo.Spec.SecretName)
+	path := strings.TrimSpace(foo.Spec.Path)
 	
-	secrets, err := VaultGetSecret(c.vaultAddr, c.vaultToken, "read", path)
+	vaultSecret, err := VaultGetSecret(c.vaultAddr, c.vaultToken, path)
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ func (c *Controller) syncHandler(key string) error {
 	secret, err := c.secretsLister.Secrets(foo.Namespace).Get(secretName)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
-		secret, err = c.kubeclientset.CoreV1().Secrets(foo.Namespace).Create(newSecret(foo, secrets))
+		secret, err = c.kubeclientset.CoreV1().Secrets(foo.Namespace).Create(newSecret(foo, vaultSecret.Data))
 	}
 
 	// If an error occurs during Get/Create, we'll requeue the item so we can
@@ -417,11 +417,40 @@ func newSecret (foo *samplev1alpha1.Space, secrets map[string]interface{}) *core
 	s.APIVersion = "v1"
 	s.Kind = "Secret"
 	s.Name = foo.Spec.SecretName
-	s.Type = corev1.SecretTypeOpaque
 	s.Data = map[string][]byte{}
-	//TODO - Compare set of values in foo.Spec.Secrets against what is in secrets
-	for key, value := range secrets {
-		s.Data[key] = []byte(value.(string))
+	
+	switch foo.Spec.Type {
+	
+	case corev1.SecretTypeTLS:
+		s.Type = corev1.SecretTypeTLS
+		var lookupKey string
+		for key, _ := range foo.Spec.Secrets {
+			//TODO - Flag missing TLSCertKey or TLSPrivateKeyKey in secrets[]
+			lookupKey = key + "-" + corev1.TLSCertKey
+			s.Data[corev1.TLSCertKey] = []byte(secrets[lookupKey].(string))
+			lookupKey = key + "-" + corev1.TLSPrivateKeyKey
+			s.Data[corev1.TLSPrivateKeyKey] = []byte(secrets[lookupKey].(string))
+			return s
+		}
+	
+	case corev1.SecretTypeDockerConfigJson:
+		s.Type = corev1.SecretTypeDockerConfigJson
+		var lookupKey string
+		for key, _ := range foo.Spec.Secrets {
+			//TODO - Flag missing DockerConfigJsonKey in secrets[]
+			lookupKey = key + corev1.DockerConfigJsonKey
+			s.Data[corev1.DockerConfigJsonKey] = []byte(secrets[lookupKey].(string))
+			return s
+		}
+	
+	case corev1.SecretTypeOpaque:
+		fallthrough
+	default:
+		s.Type = corev1.SecretTypeOpaque
+		//TODO - Flag missing keys in foo.Spec.Secrets[] versus secrets[]
+		for key, _ := range foo.Spec.Secrets {
+			s.Data[key] = []byte(secrets[key].(string))
+		}
 	}
 	
 	return s

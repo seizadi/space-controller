@@ -12,5 +12,35 @@ metadata:
 spec:
   secretName: contacts-app-seizadi-minikube-dev-secrets
   path: k8s
+  # you can leave out type spec for Opaque
+  type: Opaque
   secrets:
     ATLAS_DATABASE_PASSWORD:
+
+---
+apiVersion: spacecontroller.seizadi.github.com/v1alpha1
+
+kind: Space
+metadata:
+  name: seizadi-v1-0-contacts-app
+  namespace: contacts-app-seizadi-minikube-dev
+spec:
+  secretName: contacts-app-seizadi-minikube-dev-secrets
+  path: k8s
+  type: kubernetes.io/tls
+  secrets:
+    app-cert:
+
+---
+apiVersion: spacecontroller.seizadi.github.com/v1alpha1
+
+kind: Space
+metadata:
+  name: seizadi-v1-0-contacts-app
+  namespace: contacts-app-seizadi-minikube-dev
+spec:
+  secretName: contacts-app-seizadi-minikube-dev-secrets
+  path: k8s
+  type: kubernetes.io/dockerconfigjson
+  secrets:
+    app-image-pull:

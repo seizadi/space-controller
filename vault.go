@@ -34,28 +34,16 @@ func VaultTokenValidation(vaultAddr string, token string) (string, error) {
 }
 
 
-func VaultGetSecret(vaultAddr string, token string, method string, path string) (map[string]interface{}, error) {
+func VaultGetSecret(vaultAddr string, token string, path string) (*vaultapi.Secret, error) {
 	client, err := VaultClientMaker(vaultAddr)
 	if err != nil {
 		glog.Fatalf("Error getting vault secrets: %s", err.Error())
 	}
 	
 	client.SetToken(token)
-	switch method {
-	case "read":
-		secret, err := client.Logical().Read(path)
-		if err != nil {
-			return nil, err
-		}
-		return secret.Data, nil
-	case "write":
-		Options := make(map[string]interface{})
-		secret, err := client.Logical().Write(path, Options)
-		if err != nil {
-			return nil, err
-		}
-		return secret.Data, nil
+	secret, err := client.Logical().Read(path)
+	if err != nil {
+		return nil, err
 	}
-	
-	return nil, err
+	return secret, nil
 }

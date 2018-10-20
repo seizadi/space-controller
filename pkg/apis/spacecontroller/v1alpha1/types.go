@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // +genclient
@@ -36,7 +37,8 @@ type Space struct {
 type SpaceSpec struct {
 	Path       string            `json:"path"`
 	SecretName string            `json:"secretName"`
-	Secrets    map[string]string `json:"secretes"`
+	Type       corev1.SecretType `json:"type"`
+	Secrets    map[string]string `json:"secrets"`
 }
 
 // SpaceStatus is the status for a Space resource
